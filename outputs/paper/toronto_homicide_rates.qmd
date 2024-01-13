@@ -150,4 +150,6 @@ We used data provided by the City of Toronto as to the homicide counts from 2004
 
 We found that the number of homicides was highest in September, with 11 homicides, and lowest in June, with 3 homicides. It may be that the monthly increase or decrease in the number of homicides are due to various factors, including social activities, community dynamics and law enforcement strategies. In general, the causes for temporal fluctuations in the number of homicides per month or for longer time periods are of interest in future studies.
 
+For the purpose of *reproducibility*, we include links to the [STA302 GitHub Repository](https://github.com/julia-ve-kim/STA302_Tutorial2), in which is contained the data sources, cleaned dataset, R scripts and the final paper (along with files used to generate it).
+
 ## 6. References
