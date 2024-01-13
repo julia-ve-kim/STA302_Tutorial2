@@ -1,0 +1,153 @@
+---
+title: "Exploring the 2020 Homicide Rate in Toronto"
+author: "Julia Kim"
+format: pdf
+editor: visual
+header-includes:
+  \usepackage{fvextra}
+  \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+bibliography: citations.bib
+---
+
+```{r}
+#### Preamble ####
+# Purpose: Read in data from the 2004-2020 dataset of homicide rates in Toronto and make a graph 
+# of the number of seats each party won.
+# Author: Julia Kim
+# Email: juliaym.kim@mail.utoronto.ca
+# Date: 12/02/24
+# Prerequisites: Know where to get the 2004-2020 dataset of homocide rates in Toronto. 
+```
+
+The city of Toronto is considered a relatively safe city to live in and travel to, with homicide rates generally declining over the past decade [@StatCan]. In this document, we are interested in the number of homicides committed per month in Toronto in 2020. We investigate this question using a workflow and code similar to Example 2.3. of Chapter 2 of *Telling Stories with Data* [@Rohan].
+
+## 1. Plan
+
+Figure 1 on p.2 shows a quick sketch of how the dataset, table and final graph should need to look like. The dataset that we are interested in would have the date and the location (or division) where the homicide occurred (Figure 1(a)). The table would have the number of homicides occurring per month (Figure 1(b)) and the final graph would display this data as a bar chart (Figure 1(c)).
+
+![Sketches of a dataset, table and graph related homicide counts in Toronto](figure.png)
+
+## 2. Simulate
+
+We first set up the workspace by downloading necessary packages in R, as follows.
+
+```{r message = FALSE}
+#### Workspace setup ####
+install.packages('tidyverse')
+install.packages('janitor')
+install.packages('formatR')
+install.packages('opendatatoronto')
+library(tidyverse)
+library(janitor)
+library(formatR)
+library(opendatatoronto)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=80), tidy=TRUE) # prevent source code from running off PDF page 
+```
+
+To simulate the data, we create a dataset of two variables: `month` and `homicide_count`. Reasonable values for `month` would be the 12 months of the year; reasonable values for `homicide_count` would be randomly sampled from a Poisson distribution with mean, say, `6`, though this is just an arbitrary choice.
+
+```{r}
+#### Simulate #### 
+set.seed(853) # for reproducibility
+simulated_homicide_data <- 
+  tibble(
+    month = factor(month.abb, levels = month.abb),
+    homicide_count = 
+      rpois(
+        n = 12,
+        lambda = 6
+      )
+  )
+
+head(simulated_homicide_data)
+```
+
+## 3. Acquire
+
+We use the data made available by the City of Toronto as to homicide counts from 2004 to 2020. To access the data, we use `opendatatoronto`.
+
+```{r}
+#### Acquire data ####
+raw_toronto_homicides_data <- 
+  read_csv(
+    file = "homicides_4326.csv",
+    show_col_types = FALSE
+  )
+
+
+#### Save data #### 
+write_csv(
+  x = raw_toronto_homicides_data,
+  file = 'raw_toronto_homicides.csv'
+)
+```
+
+We quickly inspect the first six rows of the dataset by using `head()`.
+
+```{r}
+head(raw_toronto_homicides_data)
+```
+
+To make this dataset similar to the one in which we are interested (Figure 1), we will need to change the column names using `clean_names()`, filter the data to the year 2020 using `filter()` and reduce the columns to only those that are relevant using `select()` .
+
+```{r}
+toronto_homicides_clean <- 
+  clean_names(raw_toronto_homicides_data) |> 
+  filter(occ_year == 2020) |> 
+  select(occ_day, occ_month, occ_year, division)
+head(toronto_homicides_clean)
+```
+
+Having appropriately cleaned the dataset, we now save it.
+
+```{r}
+write_csv(
+  x = toronto_homicides_clean,
+  file = "cleaned_toronto_homicides.csv"
+)
+```
+
+## 4. Explore
+
+We explore and visualise the dataset we just created by making a graph. First, we read in the dataset and obtain a count of the number of homicides per month using `group_by()` and `summarise()` from `dplyr` .
+
+```{r}
+#### Explore data ####
+cleaned_toronto_homicides <-  
+  read_csv(
+    file = "cleaned_toronto_homicides.csv", 
+    show_col_types = FALSE
+  )
+# obtain a count of the number of homicides per month 
+cleaned_toronto_homicides |> 
+  # arrange the months in chronological order from January to December
+  mutate(occ_month = factor(occ_month, levels = month.name)) |> 
+  group_by(occ_month) |> 
+  summarise(num_homicides = n())
+```
+
+In Figure 2, we use `ggplot2` of `tidyverse` to build a graph of the number of homicides committed per month in Toronto in 2020.
+
+```{r}
+cleaned_toronto_homicides |>
+  mutate(occ_month = factor(occ_month, levels = month.name, labels = month.abb)) |> 
+  ggplot(aes(x = occ_month)) +
+  geom_bar() +
+  theme_minimal() + # Make the theme neater
+  labs(
+    x = "Month",
+    y = "Number of Homicides", 
+    caption = "Figure 2: Number of Homicides per month in Toronto in 2020"
+  ) + 
+  theme(plot.caption = element_text(hjust = 0.5, size = 10)) 
+```
+
+## 5. Share
+
+Toronto is considered a relatively safe city to inhabit, with homicide rides declining over the past decade [@StatCan]. We were interested in the number of homicides in Toronto per month in 2020.
+
+We used data provided by the City of Toronto as to the homicide counts from 2004 to 2020. We cleaned, tidied, and analyzed the dataset using the statistical language R [@Rcit] as well as the `tidyverse` [@tidyverse], `janitor` [@janitor], `opendatatoronto` [@tor] and `formatR` [@formatR] packages. We then created a bar graph of the number of homicides committed per month in 2020.
+
+We found that the number of homicides was highest in September, with 11 homicides, and lowest in June, with 3 homicides. It may be that the monthly increase or decrease in the number of homicides are due to various factors, including social activities, community dynamics and law enforcement strategies. In general, the causes for temporal fluctuations in the number of homicides per month or for longer time periods are of interest in future studies.
+
+## 6. References
